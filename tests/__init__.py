@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from polars import DataFrame
-from chow import chow_test
+from chow_test import chow_test
 
 class TestBase(TestCase):
     def test_base(self):

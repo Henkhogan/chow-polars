@@ -1,6 +1,6 @@
 # Chow Test
 
-[![Downloads](https://pepy.tech/badge/chowtest)](https://pepy.tech/project/chowtest) [![Downloads](https://pepy.tech/badge/chowtest/month)](https://pepy.tech/project/chowtest)
+[![Downloads](https://pepy.tech/badge/chowtest-polars)](https://pepy.tech/project/chowtest) [![Downloads](https://pepy.tech/badge/chowtest-polars/month)](https://pepy.tech/project/chowtest-polars)
 
 This project provides an implementation of the Chow break test.
 
@@ -16,7 +16,7 @@ This implementation supports simple linear models, and finding breaks where k = 
 
 This module requires Python 3.0+ to run. The module can can be imported by:
 ```python
-pip install chowtest
+pip install chowtest-polars
 from chow_test import chow_test
 ```
 
@@ -26,8 +26,8 @@ The required input arguments are listed below:
 
 | **Argument**       | **Description**                                                                        | **Data Type**             |
 |--------------------|----------------------------------------------------------------------------------------|---------------------------|
-| ```X_series```     | The series or series' denoting the X variables.                                        | pd.Series or pd.DataFrame |
-| ```y_series```     | The series denoting the y variable                                                     | pd.Series                 |
+| ```X_series```     | The series or series' denoting the X variables.                                        | pl.Series or pl.DataFrame |
+| ```y_series```     | The series denoting the y variable                                                     | pl.Series                 |
 | ```last_index```   | The final index value to be included before the data split.                            | int                       |
 | ```first_index```  | The first index value to be included after the index split.                            | int                       |
 | ```significance``` | The significance level against which the p-value is assessed. Can be 0.1, 0.05 or 0.01 | float                     |
