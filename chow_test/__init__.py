@@ -86,35 +86,25 @@ def _calculate_chow_statistic(pooled_rss_value: int | float, rss_one: int | floa
         return 0
 
 
-def _determine_p_value_significance(chow_statistic: int | float, n_one_value: int, n_two_value: int, k_value: int,
-                                   significance_level: float, verbose: bool = True):
+def _determine_p_value_significance(chow_value: int | float, n_one_value: int, n_two_value: int, k_value: int):
     """
-    This function determines the statistical significance of the chow_statistic passed as an input argument. The
+    This function determines the statistical significance of the chow_value passed as an input argument. The
     function firstly checks that the input arguments are of the correct type, followed by defining the p-value with
     respect to the f-distribution. The p-value is subsequently assessed against the significance_level argument,
-    printing the output if verbose is set to True. The chow_statistic and corresponding p-value are returned.
+    printing the output if verbose is set to True. The chow_value and corresponding p-value are returned.
 
-    :param: chow_statistic: the chow statistic for which to assess the p-value. (float)
+    :param: chow_value: the chow statistic for which to assess the p-value. (float)
     :param: n_one_value: the number of observations held within the first subset of data. (int)
     :param: n_two_value: the number of observations held within the second subset of data. (int)
     :param: k_value: the number of degrees of freedom. (int)
-    :param: significance_level: the significance level against which the p-value is assessed. (float)
-    :param: verbose: determines if progress is printed. (bool)
-    :return: chow_statistic: the chow statistic for which to assess the p-value. (float)
     :return: p_value: the p-value associated with the chow statistic. (float)
     """
     if not all(isinstance(v, int) for v in [n_one_value, n_two_value, k_value]):
         raise TypeError("The 'n_one_value', 'n_two_value' and 'k_value' must be integer types.")
-    if not isinstance(chow_statistic, (int, float)):
+    if not isinstance(chow_value, (int, float)):
         raise TypeError("The 'chow_statistic' must be an integer or float type.")
-    p_value = float(1 - f.cdf(chow_statistic, dfn=k_value, dfd=((n_one_value + n_two_value) - 2 * k_value)))
-    if p_value <= significance_level and verbose:
-        print("Reject the null hypothesis of equality of regression coefficients in the two periods.")
-    elif p_value > significance_level and verbose:
-        print("Fail to reject the null hypothesis of equality of regression coefficients in the two periods.")
-    if verbose:
-        print("Chow Statistic: {}, P_value: {}".format(chow_statistic, p_value))
-    return chow_statistic, p_value
+    p_value = float(1 - f.cdf(chow_value, dfn=k_value, dfd=((n_one_value + n_two_value) - 2 * k_value)))
+    return p_value
 
 
 def chow_test(df: pl.DataFrame, last_index: int, first_index: int,
@@ -154,5 +144,13 @@ def chow_test(df: pl.DataFrame, last_index: int, first_index: int,
     n_one = len(one)
     n_two = len(two)
     chow_value = _calculate_chow_statistic(rss_pooled, first_rss, second_rss, k, n_one, n_two)
-    chow_value, p_value = _determine_p_value_significance(chow_value, n_one, n_two, k, significance, verbose=verbose)
+    p_value = _determine_p_value_significance(chow_value, n_one, n_two, k)
+
+    if p_value <= significance and verbose:
+        print("Reject the null hypothesis of equality of regression coefficients in the two periods.")
+    elif p_value > significance and verbose:
+        print("Fail to reject the null hypothesis of equality of regression coefficients in the two periods.")
+    if verbose:
+        print("Chow Statistic: {}, P_value: {}".format(chow_value, p_value))
+
     return chow_value, p_value
