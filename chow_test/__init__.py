@@ -3,27 +3,28 @@ from scipy.stats import f
 import polars as pl
 
 
-def _calculate_rss(X_series: pl.DataFrame, y_series: pl.Series):
+def _calculate_rss(df: pl.DataFrame, x_field: str = 'x', y_field: str = 'y'):
     """
-    This function returns the sum of squared residuals. The function firstly checks that the input
-    arguments are of the correct type, followed by fitting the linear regression model on the X_series
-    and y_series. The predicted values are then placed into the 'y_hat' column, after which the residuals
-    are calculated. Finally, the sum of squared residuals (rss) is calculated.
-
-    :param: X_series: the series or set of series denoting the X variable. (pl.DataFrame)
-    :param: y_series: the series denoting the y variable. (pl.Series)
-    :return: summary_result: a Pandas DataFrame summarising the result. (pl.DataFrame)
-    :return: rss: the sum of squared errors. (float)
+    Calculate the residual sum of squares (RSS) for a given Polars DataFrame.
+    Args:
+        df (pl.DataFrame): The input Polars DataFrame.
+        x_field (str, optional): The column name for the x values. Defaults to 'x'.
+        y_field (str, optional): The column name for the y values. Defaults to 'y'.
+    Returns:
+        Tuple[pl.DataFrame, float]: A tuple containing the summary result DataFrame and the RSS value.
+    Raises:
+        TypeError: If the 'df' argument is not a Polars DataFrame.
     """
-    if not isinstance(X_series, pl.DataFrame):
-        raise TypeError("The 'X_series' argument should be a Polars Series.")
-    if not isinstance(y_series, pl.Series):
-        raise TypeError("The 'y_series' argument must be a Polars Series.")
     
-    model = Lr().fit(X_series, y_series)
+    if not isinstance(df, pl.DataFrame):
+        raise TypeError("The 'df' argument should be a Polars DataFrame.")
+   
+    x_df = pl.DataFrame(df[x_field])
+    model = Lr().fit(x_df, df[y_field])
+    #y_hat = list(model.predict(x_df))
     summary_result = pl.DataFrame({
-            'y_hat': list(model.predict(X_series)),  # type: ignore
-            'y_actual': y_series
+            'y_hat': list(model.predict(x_df)),  # type: ignore
+            'y_actual': df[y_field]
     })
    
     summary_result = summary_result \
@@ -33,32 +34,28 @@ def _calculate_rss(X_series: pl.DataFrame, y_series: pl.Series):
     return summary_result, rss
 
 
-def _data_preparation(X_series: pl.Series | pl.DataFrame, y_series: pl.Series, last_index: int, first_index: int):
+def _data_preparation(df: pl.DataFrame, last_index: int, first_index: int):
     """
-    This function prepares the data by splitting the X_series and y_series into two subsets. The function firstly checks
-    that the input arguments are of the expected types, followed by splitting the X_series and y_series into X_series_one,
-    X_series_two, y_series_one and y_series_two respectively. The function then returns the sub-series'.
-
-    :param: y_series: the series denoting the y variable. (pl.Series)
-    :param: X_series: the series or set of series denoting the X variable. (pl.Series, pl.DataFrame)
-    :param: last_index: the final index value to be included before the data split. (int)
-    :param: first_index: the first index value to be included after the data split. (int)
-    :return: X_series_one: the Pandas DataFrame containing the pre-split X data. (pl.DataFrame)
-    :return: X_series_two: the Pandas DataFrame containing the post-split X data. (pl.DataFrame)
-    :return: y_series_one: the Pandas Series containing the pre-split y data. (pl.Series)
-    :return: y_series_two: the Pandas Series containing the post_split y data. (pl.Series)
+    Prepare the data by slicing a Polars DataFrame based on the given last and first indices.
+    Args:
+        df (pl.DataFrame): The Polars DataFrame to be sliced.
+        last_index (int): The last index (exclusive) for slicing the DataFrame.
+        first_index (int): The first index (inclusive) for slicing the DataFrame.
+    Raises:
+        TypeError: If the 'df' argument is not a Polars DataFrame.
+        TypeError: If the 'last_index' or 'first_index' arguments are not of integer type.
+    Returns:
+        tuple: A tuple containing two sliced Polars DataFrames, 'one' and 'two'.
     """
-    if not isinstance(y_series, pl.Series):
-        raise TypeError("The 'y_series' argument must be a Pandas Series.")
-    if not isinstance(X_series, (pl.Series, pl.DataFrame)):
-        raise TypeError("The 'X_series' argument must be a Pandas Series or a Pandas DataFrame.")
+    
+    if not isinstance(df, pl.DataFrame):
+        raise TypeError("The 'X_series' argument should be a Polars DataFrame.")
     if not all(isinstance(v, int) for v in [last_index, first_index]):
         raise TypeError("The 'last_index' and 'first_index' arguments must be integer types.")
-    X_series_one = X_series[: last_index]
-    X_series_two = X_series[first_index:]
-    y_series_one = y_series[: last_index]
-    y_series_two = y_series[first_index:]
-    return X_series_one, X_series_two, y_series_one, y_series_two
+    
+    one = df[:last_index]
+    two = df[first_index:]
+    return one, two
 
 
 def _calculate_chow_statistic(pooled_rss_value: int | float, rss_one: int | float, rss_two: int | float,
@@ -120,8 +117,8 @@ def _determine_p_value_significance(chow_statistic: int | float, n_one_value: in
     return chow_statistic, p_value
 
 
-def chow_test(X_series: pl.Series | pl.DataFrame, y_series: pl.Series, last_index: int, first_index: int,
-              significance: float):
+def chow_test(df: pl.DataFrame, last_index: int, first_index: int,
+              significance: float, x_field: str = 'x', y_field: str = 'y'):
     """
     This function acts as the highest level of abstraction for the chow test. The function firstly checks that the
     input arguments are of the correct type, followed by calculating the sum of squared residuals for the entire data
@@ -129,18 +126,17 @@ def chow_test(X_series: pl.Series | pl.DataFrame, y_series: pl.Series, last_inde
     then computed and assessed against the significance argument. Finally, the chow_test value and p_value are returned
     from the function.
 
-    :param: X_series: the series or set of series denoting the X variable. (pl.DataFrame)
-    :param: y_series: the series denoting the y variable. (pl.Series)
-    :param: last_index: the final index value to be included before the data split. (int)
-    :param: first_index: the first index value to be included after the data split. (int)
-    :param: significance_level: the significance level against which the p-value is assessed. (float)
-    :return: chow_value: the chow test output value. (float)
-    :return: p_value: the associated p-value for the chow test. (float)
+    :param: df: The input Polars DataFrame.
+    :param: last_index: The final index value to be included before the data split. (int)
+    :param: first_index: The first index value to be included after the data split. (int)
+    :param: significance: The significance level against which the p-value is assessed. (float)
+    :param: x_field: The column name for the x values. Defaults to 'x'.
+    :param: y_field: The column name for the y values. Defaults to 'y'.
+    :return: chow_value: The chow test output value. (float)
+    :return: p_value: The associated p-value for the chow test. (float)
     """
-    if not isinstance(y_series, pl.Series):
-        raise TypeError("The 'y_series' argument must be a Pandas Series.")
-    if not isinstance(X_series, (pl.Series, pl.DataFrame)):
-        raise TypeError("The 'X_series' argument must be a Pandas Series or a Pandas DataFrame.")
+    if not isinstance(df, pl.DataFrame):
+        raise TypeError("The 'X_series' argument should be a Polars DataFrame.")
     if not all(isinstance(v, int)for v in [last_index, first_index]):
         raise TypeError("The 'last_index' and 'first_index' arguments must be integer types.")
     if not isinstance(significance, float):
@@ -148,23 +144,13 @@ def chow_test(X_series: pl.Series | pl.DataFrame, y_series: pl.Series, last_inde
     if significance not in [0.01, 0.05, 0.1]:
         raise KeyError("The 'significance' argument must be 0.01, 0.05 or 0.1")
 
-    if isinstance(X_series, pl.Series):
-        X_series = pl.DataFrame(X_series)
-    _, rss_pooled = _calculate_rss(X_series, y_series)
-    X_one, X_two, y_one, y_two = _data_preparation(X_series, y_series, last_index, first_index)
-    _, first_rss = _calculate_rss(X_one, y_one)
-    _, second_rss = _calculate_rss(X_two, y_two)
-    k = X_series.shape[1] + 1
-    n_one = X_one.shape[0]
-    n_two = X_two.shape[0]
+    _, rss_pooled = _calculate_rss(df, x_field, y_field)
+    one, two = _data_preparation(df=df, last_index=last_index, first_index=first_index, x_field=x_field, y_field=y_field)
+    _, first_rss = _calculate_rss(one, x_field, y_field)
+    _, second_rss = _calculate_rss(two, x_field, y_field)
+    k = 2
+    n_one = len(one)
+    n_two = len(two)
     chow_value = _calculate_chow_statistic(rss_pooled, first_rss, second_rss, k, n_one, n_two)
     chow_value, p_value = _determine_p_value_significance(chow_value, n_one, n_two, k, significance)
     return chow_value, p_value
-
-
-if __name__ == "__main__":
-    data = [[11, 10, 9], [11,  15, 9], [12, 14, 16], [11, 10, 9], [11,  15, 9],
-            [12, 14, 16], [11, 10, 9], [11,  15, 9], [12, 14, 16], [11, 10, 9],
-            [11,  15, 9], [12, 14, 16], [11, 10, 9], [11,  15, 9], [12, 14, 16]]
-    new_data = pl.DataFrame(data, columns=["A", "B", "C"])
-    chow, p_val = chow_test(new_data["B"], new_data["A"], 8, 9, 0.01)
