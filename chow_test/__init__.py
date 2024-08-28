@@ -118,7 +118,9 @@ def _determine_p_value_significance(chow_statistic: int | float, n_one_value: in
 
 
 def chow_test(df: pl.DataFrame, last_index: int, first_index: int,
-              significance: float, x_field: str = 'x', y_field: str = 'y'):
+              significance: float, x_field: str = 'x', y_field: str = 'y',
+              verbose = False
+              ):
     """
     This function acts as the highest level of abstraction for the chow test. The function firstly checks that the
     input arguments are of the correct type, followed by calculating the sum of squared residuals for the entire data
@@ -145,12 +147,12 @@ def chow_test(df: pl.DataFrame, last_index: int, first_index: int,
         raise KeyError("The 'significance' argument must be 0.01, 0.05 or 0.1")
 
     _, rss_pooled = _calculate_rss(df, x_field, y_field)
-    one, two = _data_preparation(df=df, last_index=last_index, first_index=first_index, x_field=x_field, y_field=y_field)
+    one, two = _data_preparation(df=df, last_index=last_index, first_index=first_index)
     _, first_rss = _calculate_rss(one, x_field, y_field)
     _, second_rss = _calculate_rss(two, x_field, y_field)
     k = 2
     n_one = len(one)
     n_two = len(two)
     chow_value = _calculate_chow_statistic(rss_pooled, first_rss, second_rss, k, n_one, n_two)
-    chow_value, p_value = _determine_p_value_significance(chow_value, n_one, n_two, k, significance)
+    chow_value, p_value = _determine_p_value_significance(chow_value, n_one, n_two, k, significance, verbose=verbose)
     return chow_value, p_value
