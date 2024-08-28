@@ -26,13 +26,12 @@ The required input arguments are listed below:
 
 | **Argument**       | **Description**                                                                        | **Data Type**             |
 |--------------------|----------------------------------------------------------------------------------------|---------------------------|
-| ```X_series```     | The series or series' denoting the X variables.                                        | pl.Series or pl.DataFrame |
-| ```y_series```     | The series denoting the y variable                                                     | pl.Series                 |
-| ```last_index```   | The final index value to be included before the data split.                            | int                       |
+| ```df```     | The input Polars DataFrame containing the x and y serieses.                                        | pl.DataFrame |
+| ```x_field```     | The column name for the x values. Defaults to 'x'.                                                     | str                 |
+| ```y_field```     | The column name for the x values. Defaults to 'y'.                                                     | str    | ```last_index```   | The final index value to be included before the data split.                            | int                       |
 | ```first_index```  | The first index value to be included after the index split.                            | int                       |
 | ```significance``` | The significance level against which the p-value is assessed. Can be 0.1, 0.05 or 0.01 | float                     |
 
-**Note: The pd.reset_index() function can be invoked in order to obtain an integer index.**
 
 
    [abc]: <https://www.jstor.org/stable/1910133?casa_token=5boKBERpursAAAAA%3ABCYkFnXnHBbM0c4thWh5rySthktrt5nLlWE1nwjKbHlwmpH5fTdQoAMzgv82adNdzRzoZBe01scMcO_lDf-mjemPUsRtOmbhXkCsuoc4tUXyWrlJi59Z3Q&seq=1#metadata_info_tab_contents>

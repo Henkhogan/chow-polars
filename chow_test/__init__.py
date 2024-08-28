@@ -128,7 +128,7 @@ def chow_test(df: pl.DataFrame, last_index: int, first_index: int,
     then computed and assessed against the significance argument. Finally, the chow_test value and p_value are returned
     from the function.
 
-    :param: df: The input Polars DataFrame.
+    :param: df: The input Polars DataFrame containing the x and y serieses.
     :param: last_index: The final index value to be included before the data split. (int)
     :param: first_index: The first index value to be included after the data split. (int)
     :param: significance: The significance level against which the p-value is assessed. (float)
