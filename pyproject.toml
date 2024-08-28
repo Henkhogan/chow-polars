@@ -7,7 +7,7 @@ authors = [{name='Henkhogan'}]
 keywords = []
 classifiers = []
 readme = 'Readme.md'
-version = '0.0.1-alpha1'
+version = '0.0.1-alpha2'
 requires-python = '>= 3.0'
 dependencies = [
     'scikit-learn',
